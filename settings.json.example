@@ -1,0 +1,7 @@
+{
+  "dialog_mode": "block",
+  "dialog_timeout": 15,
+  "watch_dir": "~/Screenshots",
+  "convert_to_gif": false,
+  "delete_original": true
+}

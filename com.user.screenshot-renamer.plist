@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.screenshot-renamer</string>
+
+    <!-- Load the API key from the secure env file, then run the script -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>
+            set -a
+            . "$HOME/.screenshot-renamer-env"
+            set +a
+            exec "$HOME/.screenshot-renamer/.venv/bin/python3" "$HOME/.screenshot-renamer/rename_screenshot.py"
+        </string>
+    </array>
+
+    <!-- Start immediately when the agent is loaded -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart automatically if the process exits -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Log output -->
+    <key>StandardOutPath</key>
+    <string>/tmp/screenshot-renamer.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/screenshot-renamer.log</string>
+</dict>
+</plist>
