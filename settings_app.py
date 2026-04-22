@@ -29,16 +29,21 @@ def load_settings() -> dict:
         "watch_dir": str(Path.home() / "Screenshots"),
         "convert_to_gif": False,
         "delete_original": True,
+        "presence": "dock",
     }
     try:
         with open(SETTINGS_FILE, "r") as f:
             data = json.load(f)
+        presence = str(data.get("presence", defaults["presence"]))
+        if presence not in ("dock", "menubar", "both"):
+            presence = "dock"
         return {
             "dialog_mode": str(data.get("dialog_mode", defaults["dialog_mode"])),
             "dialog_timeout": int(data.get("dialog_timeout", defaults["dialog_timeout"])),
             "watch_dir": str(Path(data.get("watch_dir", defaults["watch_dir"])).expanduser()),
             "convert_to_gif": bool(data.get("convert_to_gif", False)),
             "delete_original": bool(data.get("delete_original", True)),
+            "presence": presence,
         }
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         return defaults
@@ -50,6 +55,7 @@ def save_settings(
     watch_dir: str,
     convert_to_gif: bool = False,
     delete_original: bool = True,
+    presence: str = "dock",
 ) -> None:
     data = {
         "dialog_mode": dialog_mode,
@@ -57,6 +63,7 @@ def save_settings(
         "watch_dir": watch_dir,
         "convert_to_gif": convert_to_gif,
         "delete_original": delete_original,
+        "presence": presence,
     }
     with open(SETTINGS_FILE, "w") as f:
         json.dump(data, f, indent=2)
@@ -85,6 +92,38 @@ def reload_watcher() -> None:
     subprocess.run(["launchctl", "load", plist], capture_output=True)
 
 
+def _restart_menubar() -> None:
+    """Kill the running menubar.py process and relaunch it so presence changes take effect."""
+    import signal
+    import os
+
+    # Find and kill any running menubar.py process
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "menubar.py"],
+            capture_output=True,
+            text=True,
+        )
+        for pid_str in result.stdout.strip().splitlines():
+            try:
+                os.kill(int(pid_str), signal.SIGTERM)
+            except (ProcessLookupError, ValueError):
+                pass
+    except Exception:
+        pass
+
+    # Relaunch menubar.py using the venv Python
+    venv_python = Path(__file__).parent / ".venv" / "bin" / "python3.12"
+    if not venv_python.exists():
+        venv_python = Path(__file__).parent / ".venv" / "bin" / "python3"
+    script = Path(__file__).parent / "menubar.py"
+    subprocess.Popen(
+        [str(venv_python), str(script)],
+        stdout=open("/tmp/menubar.log", "w"),
+        stderr=subprocess.STDOUT,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main window
 # ---------------------------------------------------------------------------
@@ -106,6 +145,7 @@ class SettingsApp:
         self.login_item_var = tk.BooleanVar(value=check_login_item())
         self.convert_gif_var = tk.BooleanVar(value=settings["convert_to_gif"])
         self.delete_original_var = tk.BooleanVar(value=settings["delete_original"])
+        self.presence_var = tk.StringVar(value=settings["presence"])
 
         pad = {"padx": 12, "pady": 6}
 
@@ -205,6 +245,21 @@ class SettingsApp:
         self._on_convert_gif_toggle()
 
         # ------------------------------------------------------------------ #
+        # App Presence row
+        # ------------------------------------------------------------------ #
+        presence_frame = tk.Frame(root)
+        presence_frame.pack(fill="x", **pad)
+
+        tk.Label(presence_frame, text="Show App In:", width=18, anchor="w").pack(side="left")
+        for value, label in [("dock", "Dock"), ("menubar", "Menu Bar"), ("both", "Both")]:
+            tk.Radiobutton(
+                presence_frame,
+                text=label,
+                variable=self.presence_var,
+                value=value,
+            ).pack(side="left", padx=(0, 8))
+
+        # ------------------------------------------------------------------ #
         # Separator
         # ------------------------------------------------------------------ #
         tk.Frame(root, height=1, bg="#cccccc").pack(fill="x", padx=12, pady=4)
@@ -282,8 +337,10 @@ class SettingsApp:
             watch_dir=self.watch_dir_var.get(),
             convert_to_gif=self.convert_gif_var.get(),
             delete_original=self.delete_original_var.get(),
+            presence=self.presence_var.get(),
         )
         reload_watcher()
+        _restart_menubar()
         self.root.destroy()
 
     def _cancel(self) -> None:
