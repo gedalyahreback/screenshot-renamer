@@ -47,15 +47,25 @@ def _open_settings() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Dock delegate — handles Dock icon click when presence is "dock" or "both"
+# Dock click handler — injected into rumps' existing delegate at runtime
 # ---------------------------------------------------------------------------
 
-class _AppDelegate(AppKit.NSObject):
-    """Minimal NSApplicationDelegate that opens Settings on Dock icon click."""
+def _inject_dock_handler() -> None:
+    """
+    Add applicationShouldHandleReopen_hasVisibleWindows_ to rumps' internal
+    NSApp delegate class so that clicking the Dock icon opens Settings.
+    We inject rather than replace the delegate to avoid breaking rumps internals.
+    """
+    from rumps import rumps as _rumps_module
 
     def applicationShouldHandleReopen_hasVisibleWindows_(self, app, has_visible):  # noqa: N802
         _open_settings()
         return False
+
+    # rumps' internal delegate class is named NSApp
+    _rumps_module.NSApp.applicationShouldHandleReopen_hasVisibleWindows_ = (
+        applicationShouldHandleReopen_hasVisibleWindows_
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -87,29 +97,23 @@ class ScreenshotRenamerApp(rumps.App):
         self._apply_presence(presence)
 
     def _apply_presence(self, presence: str) -> None:
-        app = AppKit.NSApplication.sharedApplication()
+        ns_app = AppKit.NSApplication.sharedApplication()
 
         if presence == "menubar":
             # Accessory: menu bar only, no Dock icon — current default behaviour
-            app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+            ns_app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
 
         elif presence == "dock":
             # Regular: Dock icon only — hide the rumps menu bar icon
-            app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
+            ns_app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
             self.icon = None
             self.title = None
-            # Install delegate so Dock-icon click opens Settings
-            delegate = _AppDelegate.alloc().init()
-            app.setDelegate_(delegate)
-            # Keep a strong reference so it isn't garbage-collected
-            self._delegate = delegate
+            _inject_dock_handler()
 
         elif presence == "both":
             # Regular: Dock icon + keep the menu bar icon
-            app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
-            delegate = _AppDelegate.alloc().init()
-            app.setDelegate_(delegate)
-            self._delegate = delegate
+            ns_app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
+            _inject_dock_handler()
 
     @rumps.clicked("Open Settings")
     def open_settings(self, _):
