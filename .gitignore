@@ -7,3 +7,6 @@ settings.json
 *.egg-info/
 dist/
 build/
+
+Screenshot Renamer.app/
+*.app/**/*.icns
