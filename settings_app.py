@@ -30,6 +30,7 @@ def load_settings() -> dict:
         "convert_to_gif": False,
         "delete_original": True,
         "presence": "dock",
+        "append_timestamp": True,
     }
     try:
         with open(SETTINGS_FILE, "r") as f:
@@ -44,6 +45,7 @@ def load_settings() -> dict:
             "convert_to_gif": bool(data.get("convert_to_gif", False)),
             "delete_original": bool(data.get("delete_original", True)),
             "presence": presence,
+            "append_timestamp": bool(data.get("append_timestamp", True)),
         }
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         return defaults
@@ -56,6 +58,7 @@ def save_settings(
     convert_to_gif: bool = False,
     delete_original: bool = True,
     presence: str = "dock",
+    append_timestamp: bool = True,
 ) -> None:
     data = {
         "dialog_mode": dialog_mode,
@@ -64,6 +67,7 @@ def save_settings(
         "convert_to_gif": convert_to_gif,
         "delete_original": delete_original,
         "presence": presence,
+        "append_timestamp": append_timestamp,
     }
     with open(SETTINGS_FILE, "w") as f:
         json.dump(data, f, indent=2)
@@ -145,6 +149,7 @@ class SettingsApp:
         self.login_item_var = tk.BooleanVar(value=check_login_item())
         self.convert_gif_var = tk.BooleanVar(value=settings["convert_to_gif"])
         self.delete_original_var = tk.BooleanVar(value=settings["delete_original"])
+        self.append_timestamp_var = tk.BooleanVar(value=settings["append_timestamp"])
         self.presence_var = tk.StringVar(value=settings["presence"])
 
         pad = {"padx": 12, "pady": 6}
@@ -245,6 +250,19 @@ class SettingsApp:
         self._on_convert_gif_toggle()
 
         # ------------------------------------------------------------------ #
+        # Append Timestamp row
+        # ------------------------------------------------------------------ #
+        timestamp_frame = tk.Frame(root)
+        timestamp_frame.pack(fill="x", **pad)
+
+        self.append_timestamp_cb = tk.Checkbutton(
+            timestamp_frame,
+            text="Append timestamp to filename",
+            variable=self.append_timestamp_var,
+        )
+        self.append_timestamp_cb.pack(side="left")
+
+        # ------------------------------------------------------------------ #
         # App Presence row
         # ------------------------------------------------------------------ #
         presence_frame = tk.Frame(root)
@@ -338,6 +356,7 @@ class SettingsApp:
             convert_to_gif=self.convert_gif_var.get(),
             delete_original=self.delete_original_var.get(),
             presence=self.presence_var.get(),
+            append_timestamp=self.append_timestamp_var.get(),
         )
         reload_watcher()
         _restart_menubar()

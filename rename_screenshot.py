@@ -62,6 +62,7 @@ def load_settings() -> dict:
         "watch_dir": Path.home() / "Screenshots",
         "convert_to_gif": False,
         "delete_original": True,
+        "append_timestamp": True,
     }
     try:
         with open(SETTINGS_FILE, "r") as f:
@@ -72,6 +73,7 @@ def load_settings() -> dict:
             "watch_dir": Path(data.get("watch_dir", str(defaults["watch_dir"]))).expanduser(),
             "convert_to_gif": bool(data.get("convert_to_gif", False)),
             "delete_original": bool(data.get("delete_original", True)),
+            "append_timestamp": bool(data.get("append_timestamp", True)),
         }
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         log.warning("Could not read %s — using defaults.", SETTINGS_FILE)
@@ -171,6 +173,7 @@ def rename_screenshot(
     dialog_timeout: int = 15,
     do_gif_convert: bool = False,
     delete_original: bool = True,
+    append_timestamp: bool = True,
 ) -> None:
     """Full pipeline: validate -> wait -> prompt -> rename -> (optional GIF conversion)."""
     if not SCREENSHOT_PATTERN.match(src.name):
@@ -193,7 +196,10 @@ def rename_screenshot(
         return
 
     now = datetime.now()
-    stem = f"{chosen_stem}-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+    if append_timestamp:
+        stem = f"{chosen_stem}-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+    else:
+        stem = chosen_stem
     ext = src.suffix.lower()
     target = src.parent / f"{stem}{ext}"
     counter = 2
@@ -278,12 +284,14 @@ class ScreenshotHandler(FileSystemEventHandler):
         dialog_timeout: int,
         convert_to_gif: bool = False,
         delete_original: bool = True,
+        append_timestamp: bool = True,
     ) -> None:
         super().__init__()
         self.dialog_mode = dialog_mode
         self.dialog_timeout = dialog_timeout
         self.convert_to_gif = convert_to_gif
         self.delete_original = delete_original
+        self.append_timestamp = append_timestamp
 
     def on_created(self, event):
         if not event.is_directory:
@@ -293,6 +301,7 @@ class ScreenshotHandler(FileSystemEventHandler):
                 dialog_timeout=self.dialog_timeout,
                 do_gif_convert=self.convert_to_gif,
                 delete_original=self.delete_original,
+                append_timestamp=self.append_timestamp,
             )
 
     def on_moved(self, event):
@@ -305,6 +314,7 @@ class ScreenshotHandler(FileSystemEventHandler):
                 dialog_timeout=self.dialog_timeout,
                 do_gif_convert=self.convert_to_gif,
                 delete_original=self.delete_original,
+                append_timestamp=self.append_timestamp,
             )
 
 
@@ -318,6 +328,7 @@ def main():
     dialog_timeout: int = settings["dialog_timeout"]
     do_convert_to_gif: bool = settings["convert_to_gif"]
     do_delete_original: bool = settings["delete_original"]
+    do_append_timestamp: bool = settings["append_timestamp"]
 
     if not watch_dir.exists():
         log.error("Watch directory does not exist: %s", watch_dir)
@@ -332,6 +343,7 @@ def main():
             dialog_timeout,
             convert_to_gif=do_convert_to_gif,
             delete_original=do_delete_original,
+            append_timestamp=do_append_timestamp,
         ),
         str(watch_dir),
         recursive=False,

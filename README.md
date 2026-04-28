@@ -31,7 +31,7 @@ The installer copies all project files to `~/.screenshot-renamer`, creates a Pyt
 
 ## Configuration
 
-Configuration lives in `~/.screenshot-renamer/settings.json`. See `settings.json.example` for the full template. The `dialog_mode` field controls how the rename prompt behaves: `"block"` waits for user input, while `"timeout"` accepts the GPT suggestion automatically after `dialog_timeout` seconds. The `watch_dir` field sets the directory to monitor (default `~/Screenshots`). Setting `convert_to_gif` to `true` converts the screenshot to an animated GIF before renaming. Setting `delete_original` to `false` keeps the original file alongside the renamed copy.
+Configuration lives in `~/.screenshot-renamer/settings.json`. See `settings.json.example` for the full template. The `dialog_mode` field controls how the rename prompt behaves: `\"block\"` waits for user input, while `\"timeout\"` accepts the GPT suggestion automatically after `dialog_timeout` seconds. The `watch_dir` field sets the directory to monitor (default `~/Screenshots`). Setting `convert_to_gif` to `true` converts the screenshot to an animated GIF before renaming. Setting `delete_original` to `false` keeps the original file alongside the renamed copy. Setting `append_timestamp` to `false` omits the `-YYYYMMDD-HHMMSS` suffix so the file is saved using only the chosen name.
 
 ## API Key
 
