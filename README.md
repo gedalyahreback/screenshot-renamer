@@ -13,7 +13,7 @@ When a new PNG appears in the configured watch directory, the watcher sends the 
 This is the recommended installation method.
 
 ```bash
-brew tap gedalyahreback/tools
+brew tap <your-username>/tools
 brew install screenshot-renamer
 ```
 

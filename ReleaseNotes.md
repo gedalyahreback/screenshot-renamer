@@ -15,4 +15,4 @@ First public release of Screenshot Renamer.
 - Optionally deletes the original video after GIF conversion.
 - App presence is configurable: Dock, Menu Bar, or both.
 - Automated GitHub Release workflow triggers on version tags and dispatches a Homebrew formula update.
-- Installed via `brew install gedalyahreback/tools/screenshot-renamer` or manually via `install.sh`.
+- Installed via `brew install <your-username>/tools/screenshot-renamer` or manually via `install.sh`.
