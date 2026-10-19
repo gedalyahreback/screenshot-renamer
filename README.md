@@ -10,10 +10,10 @@ When a new PNG appears in the configured watch directory, the watcher sends the 
 
 ### Via Homebrew
 
-This is the recommended installation method.
+This is the recommended installation method. The tap and formula are maintained in [gedalyahreback/homebrew-tools](https://github.com/gedalyahreback/homebrew-tools).
 
 ```bash
-brew tap <your-username>/tools
+brew tap gedalyahreback/tools
 brew install screenshot-renamer
 ```
 
